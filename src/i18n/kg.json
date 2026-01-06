@@ -1,0 +1,21 @@
+{
+  "app": {
+    "title": "Тестирлөө",
+    "start": "Тестти баштоо",
+    "submit": "Жиберүү",
+    "next": "Кийинки",
+    "back": "Артка"
+  },
+  "pages": {
+    "home": {"welcome": "Кош келиңиз"},
+    "auth": {"login": "Кирүү"},
+    "level": {"choose": "Деңгеңизди тандаңыз"},
+    "test": {"inProgress": "Тест жүрүүдө"},
+    "result": {"score": "Балл", "percent": "Пайыз"}
+  },
+  "questions": {
+    "hoursPlaceholder": "Күнүнө канча саат окууга даярсың?"
+  },
+  "language": {"ru": "Русский", "kg": "Кыргызча"},
+  "resultLevels": {"weak": "Алсыз", "medium": "Орточо", "high": "Жогорку"}
+}

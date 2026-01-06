@@ -1,0 +1,21 @@
+{
+  "app": {
+    "title": "Тестирование",
+    "start": "Начать тест",
+    "submit": "Отправить",
+    "next": "Далее",
+    "back": "Назад"
+  },
+  "pages": {
+    "home": {"welcome": "Добро пожаловать"},
+    "auth": {"login": "Войти"},
+    "level": {"choose": "Выберите уровень"},
+    "test": {"inProgress": "Тест выполняется"},
+    "result": {"score": "Набранные баллы", "percent": "Процент"}
+  },
+  "questions": {
+    "hoursPlaceholder": "Сколько часов в день вы готовы учиться?"
+  },
+  "language": {"ru": "Русский", "kg": "Кыргызча"},
+  "resultLevels": {"weak": "Слабый", "medium": "Средний", "high": "Высокий"}
+}
