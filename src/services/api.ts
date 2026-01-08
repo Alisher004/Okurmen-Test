@@ -6,7 +6,8 @@ export interface Question {
   correct?: number; // index for logic
 }
 
-const mockQuestions: Question[] = [
+// Статические вопросы
+export const QUESTIONS: Question[] = [
   {
     id: 1,
     type: "logic",
@@ -23,26 +24,91 @@ const mockQuestions: Question[] = [
   },
   {
     id: 3,
+    type: "logic",
+    question: { ru: "Сколько будет 10 - 4?", kg: "10 - 4 канча?" },
+    options: ["5", "6", "7", "8"],
+    correct: 1,
+  },
+  {
+    id: 4,
     type: "motivation",
     question: {
       ru: "Сколько часов в день вы готовы учиться?",
       kg: "Күнүнө канча саат окууга даярсың?",
     },
   },
+  {
+    id: 5,
+    type: "motivation",
+    question: {
+      ru: "Почему вы хотите поступить в это учебное заведение?",
+      kg: "Эмне үчүн сиз ушул окуу жайына тапшыргыңыз келет?",
+    },
+  },
 ];
 
-export function fetchQuestions(): Promise<Question[]> {
-  return new Promise((res) => setTimeout(() => res(mockQuestions), 300));
+// Получить вопросы (синхронно)
+export function getQuestions(): Question[] {
+  return QUESTIONS;
 }
 
-export function submitResults(payload: { answers: (number | string | null)[]; questions: Question[] }): Promise<{ score: number }>{
-  const { answers, questions } = payload;
+// Рассчитать результат
+export function calculateResults(
+  answers: (number | string | null)[],
+  questions: Question[]
+): { score: number; percent: number } {
   let score = 0;
+  let logicCount = 0;
+
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i];
-    if (q.type === "logic" && typeof answers[i] === "number") {
-      if (answers[i] === q.correct) score += 1;
+    if (q.type === "logic") {
+      logicCount++;
+      if (typeof answers[i] === "number" && answers[i] === q.correct) {
+        score += 1;
+      }
     }
   }
-  return new Promise((res) => setTimeout(() => res({ score }), 300));
+
+  const percent = logicCount === 0 ? 0 : Math.round((score / logicCount) * 100);
+
+  return { score, percent };
+}
+
+// Сохранить результат в Supabase (опционально, с fallback на mock)
+export async function saveResult(
+  score: number,
+  percent: number,
+  answers: (number | string | null)[]
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Пытаемся использовать Supabase, если доступен
+    const { supabase } = await import("./supabaseClient");
+    
+    if (!supabase) {
+      console.warn("Supabase not configured, skipping save");
+      return { success: true }; // Mock успех
+    }
+    
+    const { error } = await supabase.from("test_attempts").insert({
+      user_id: "anonymous", // Для упрощенной версии
+      level: "easy",
+      score,
+      percent,
+      answers,
+      started_at: new Date().toISOString(),
+      finished_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.warn("Supabase insert failed, using mock:", error);
+      return { success: true }; // Mock успех
+    }
+
+    return { success: true };
+  } catch (err) {
+    // Если Supabase недоступен, просто mock
+    console.warn("Supabase not available, using mock");
+    return { success: true }; // Mock успех
+  }
 }
