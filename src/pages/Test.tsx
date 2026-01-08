@@ -1,60 +1,79 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Timer from "../components/Timer";
 import Question from "../components/Question";
-import { fetchQuestions, submitResults } from "../services/api";
+import { getQuestions, calculateResults, saveResult } from "../services/api";
 import type { Question as Q } from "../services/api";
 import { useI18n } from "../i18n";
 
-export default function Test() {
-  const [questions, setQuestions] = useState<Q[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<(number | string | null)[]>([]);
-  const [timeLeft, setTimeLeft] = useState(20 * 60);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const { t } = useI18n();
+const TIME_LIMIT_SECONDS = 20 * 60; // 20 минут
 
-  useEffect(() => {
-    fetchQuestions().then((qs) => {
-      setQuestions(qs);
-      setAnswers(Array(qs.length).fill(null));
-      setLoading(false);
-    });
-  }, []);
+export default function Test() {
+  const questions = getQuestions();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState<(number | string | null)[]>(
+    Array(questions.length).fill(null)
+  );
+  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT_SECONDS);
+  const navigate = useNavigate();
+  const { t, lang } = useI18n();
 
   function handleAnswer(answer: number | string) {
     const newAnswers = [...answers];
     newAnswers[currentIndex] = answer;
     setAnswers(newAnswers);
 
-    // move forward automatically; no skipping/backwards
-    if (currentIndex + 1 < questions.length) setCurrentIndex((i) => i + 1);
-    else handleSubmit(newAnswers);
+    // Переход к следующему вопросу
+    if (currentIndex + 1 < questions.length) {
+      setCurrentIndex((i) => i + 1);
+    } else {
+      // Последний вопрос - автоматически submit
+      handleSubmit(newAnswers);
+    }
   }
 
   async function handleSubmit(finalAnswers?: (number | string | null)[]) {
-    const payloadAnswers = finalAnswers ?? answers;
-    const res = await submitResults({ answers: payloadAnswers, questions });
-    const logicCount = questions.filter((q) => q.type === "logic").length;
-    const percent = logicCount === 0 ? 0 : (res.score / logicCount) * 100;
-    navigate("/result", { state: { score: res.score, percent, answers: payloadAnswers, questions } });
+    const finalAnswersData = finalAnswers ?? answers;
+    const { score, percent } = calculateResults(finalAnswersData, questions);
+    
+    // Попытка сохранить (опционально)
+    await saveResult(score, percent, finalAnswersData);
+
+    navigate("/result", { 
+      state: { 
+        score, 
+        percent,
+        totalQuestions: questions.filter(q => q.type === "logic").length
+      } 
+    });
   }
 
-  if (loading) return <div>Loading...</div>;
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const timeDisplay = `${minutes}:${String(seconds).padStart(2, "0")}`;
 
   return (
-    <div>
-      <h2>{t("pages.test.inProgress")}</h2>
-      <Timer initialTime={20 * 60} onTimeUp={() => handleSubmit()} onTick={(s) => setTimeLeft(s)} />
+    <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
+      <div style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h2>{t("pages.test.inProgress") || "Тест жүрүүдө"}</h2>
+        <div style={{ fontSize: "18px", fontWeight: "bold" }}>
+          {timeDisplay}
+        </div>
+      </div>
 
-      <div>
-        <p>
+      {/* Timer работает в фоне, обновляет timeLeft через onTick */}
+      <Timer 
+        initialTime={TIME_LIMIT_SECONDS} 
+        onTimeUp={() => handleSubmit()} 
+        onTick={(s) => setTimeLeft(s)} 
+      />
+
+      <div style={{ marginTop: "30px" }}>
+        <p style={{ marginBottom: "10px" }}>
           {currentIndex + 1} / {questions.length}
         </p>
         <Question question={questions[currentIndex]} onAnswer={handleAnswer} />
       </div>
-      <div>Time left: {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, "0")}</div>
     </div>
   );
 }

@@ -25,5 +25,6 @@ export default function Timer({ initialTime, onTimeUp, onTick }: TimerProps) {
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
 
-  return <div>{minutes}:{seconds < 10 ? `0${seconds}` : seconds}</div>;
+  // Компонент работает в фоне, не рендерит UI (время отображается в Test.tsx)
+  return null;
 }
