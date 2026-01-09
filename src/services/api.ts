@@ -1,55 +1,107 @@
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
 export interface Question {
-  id: number;
-  type: "logic" | "motivation";
-  question: { ru: string; kg: string };
-  options?: string[];
-  correct?: number; // index for logic
+  id: string;
+  text: string;
+  level: 'beginner' | 'intermediate' | 'advanced';
+  options: string[];
+  correctAnswer: number;
+  explanation?: string;
 }
 
-// Статические вопросы
-export const QUESTIONS: Question[] = [
-  {
-    id: 1,
-    type: "logic",
-    question: { ru: "2 + 2 = ?", kg: "2 + 2 = ?" },
-    options: ["3", "4", "5", "6"],
-    correct: 1,
-  },
-  {
-    id: 2,
-    type: "logic",
-    question: { ru: "Что больше: 5 или 3?", kg: "Эмне чоң: 5 же 3?" },
-    options: ["5", "3", "2", "1"],
-    correct: 0,
-  },
-  {
-    id: 3,
-    type: "logic",
-    question: { ru: "Сколько будет 10 - 4?", kg: "10 - 4 канча?" },
-    options: ["5", "6", "7", "8"],
-    correct: 1,
-  },
-  {
-    id: 4,
-    type: "motivation",
-    question: {
-      ru: "Сколько часов в день вы готовы учиться?",
-      kg: "Күнүнө канча саат окууга даярсың?",
-    },
-  },
-  {
-    id: 5,
-    type: "motivation",
-    question: {
-      ru: "Почему вы хотите поступить в это учебное заведение?",
-      kg: "Эмне үчүн сиз ушул окуу жайына тапшыргыңыз келет?",
-    },
-  },
-];
+// Получить все вопросы с сервера
+export async function getQuestions(): Promise<Question[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/questions`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch questions');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching questions:', error);
+    return [];
+  }
+}
 
-// Получить вопросы (синхронно)
-export function getQuestions(): Question[] {
-  return QUESTIONS;
+// Получить вопросы по уровню сложности
+export async function getQuestionsByLevel(level: 'beginner' | 'intermediate' | 'advanced'): Promise<Question[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/questions/level/${level}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch questions');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching questions:', error);
+    return [];
+  }
+}
+
+// Получить один вопрос
+export async function getQuestion(id: string): Promise<Question | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/questions/${id}`);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching question:', error);
+    return null;
+  }
+}
+
+// Создать вопрос
+export async function createQuestion(question: Omit<Question, 'id'>): Promise<Question | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/questions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(question),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to create question');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating question:', error);
+    return null;
+  }
+}
+
+// Обновить вопрос
+export async function updateQuestion(id: string, question: Partial<Question>): Promise<Question | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/questions/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(question),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to update question');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating question:', error);
+    return null;
+  }
+}
+
+// Удалить вопрос
+export async function deleteQuestion(id: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/questions/${id}`, {
+      method: 'DELETE',
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Error deleting question:', error);
+    return false;
+  }
 }
 
 // Рассчитать результат
@@ -58,57 +110,42 @@ export function calculateResults(
   questions: Question[]
 ): { score: number; percent: number } {
   let score = 0;
-  let logicCount = 0;
+  let totalQuestions = questions.length;
 
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i];
-    if (q.type === "logic") {
-      logicCount++;
-      if (typeof answers[i] === "number" && answers[i] === q.correct) {
-        score += 1;
-      }
+    if (typeof answers[i] === "number" && answers[i] === q.correctAnswer) {
+      score += 1;
     }
   }
 
-  const percent = logicCount === 0 ? 0 : Math.round((score / logicCount) * 100);
+  const percent = totalQuestions === 0 ? 0 : Math.round((score / totalQuestions) * 100);
 
   return { score, percent };
 }
 
-// Сохранить результат в Supabase (опционально, с fallback на mock)
+// Сохранить результат на наш backend
 export async function saveResult(
   score: number,
   percent: number,
   answers: (number | string | null)[]
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Пытаемся использовать Supabase, если доступен
-    const { supabase } = await import("./supabaseClient");
-    
-    if (!supabase) {
-      console.warn("Supabase not configured, skipping save");
-      return { success: true }; // Mock успех
-    }
-    
-    const { error } = await supabase.from("test_attempts").insert({
-      user_id: "anonymous", // Для упрощенной версии
-      level: "easy",
-      score,
-      percent,
-      answers,
-      started_at: new Date().toISOString(),
-      finished_at: new Date().toISOString(),
+    const response = await fetch(`${API_BASE_URL}/attempts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score, percent, answers, createdAt: new Date().toISOString() }),
     });
 
-    if (error) {
-      console.warn("Supabase insert failed, using mock:", error);
-      return { success: true }; // Mock успех
+    if (!response.ok) {
+      const text = await response.text();
+      console.warn('Failed to save attempt:', text);
+      return { success: false, error: text };
     }
 
     return { success: true };
-  } catch (err) {
-    // Если Supabase недоступен, просто mock
-    console.warn("Supabase not available, using mock");
-    return { success: true }; // Mock успех
+  } catch (err: any) {
+    console.warn('Error saving attempt:', err?.message || err);
+    return { success: false, error: String(err) };
   }
 }

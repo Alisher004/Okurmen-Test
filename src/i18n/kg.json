@@ -4,11 +4,14 @@
     "start": "Тестти баштоо",
     "submit": "Жиберүү",
     "next": "Кийинки",
-    "back": "Артка"
+    "back": "Артка",
+    "login": "Кирүү",
+    "register": "Катталуу",
+    "logout": "Чыгуу"
   },
   "pages": {
     "home": {"welcome": "Кош келиңиз"},
-    "auth": {"login": "Кирүү"},
+    "auth": {"login": "Кирүү", "register": "Катталуу"},
     "level": {"choose": "Деңгеңизди тандаңыз"},
     "test": {"inProgress": "Тест жүрүүдө"},
     "result": {"score": "Балл", "percent": "Пайыз"}

@@ -9,14 +9,33 @@ import { useI18n } from "../i18n";
 const TIME_LIMIT_SECONDS = 20 * 60; // 20 минут
 
 export default function Test() {
-  const questions = getQuestions();
+  const [questions, setQuestions] = useState<Q[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<(number | string | null)[]>(
-    Array(questions.length).fill(null)
-  );
+  const [answers, setAnswers] = useState<(number | string | null)[]>([]);
   const [timeLeft, setTimeLeft] = useState(TIME_LIMIT_SECONDS);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { t, lang } = useI18n();
+
+  // Load questions from API
+  useEffect(() => {
+    const loadQuestions = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getQuestions();
+        setQuestions(data);
+        setAnswers(Array(data.length).fill(null));
+      } catch (error) {
+        console.error("Error loading questions:", error);
+        // Fallback to empty array
+        setQuestions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadQuestions();
+  }, []);
 
   function handleAnswer(answer: number | string) {
     const newAnswers = [...answers];
@@ -43,7 +62,7 @@ export default function Test() {
       state: { 
         score, 
         percent,
-        totalQuestions: questions.filter(q => q.type === "logic").length
+        totalQuestions: questions.length
       } 
     });
   }
@@ -52,10 +71,26 @@ export default function Test() {
   const seconds = timeLeft % 60;
   const timeDisplay = `${minutes}:${String(seconds).padStart(2, "0")}`;
 
+  if (isLoading) {
+    return (
+      <div style={{ padding: "20px", textAlign: "center" }}>
+        <p>{lang === 'ru' ? 'Загрузка вопросов...' : 'Суроолорду жүктүүдө...'}</p>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div style={{ padding: "20px", textAlign: "center" }}>
+        <p>{lang === 'ru' ? 'Вопросы не найдены' : 'Суроолор табылган жок'}</p>
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
       <div style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2>{t("pages.test.inProgress") || "Тест жүрүүдө"}</h2>
+        <h2>{t("pages.test.inProgress") || (lang === 'ru' ? 'Тест выполняется' : 'Тест жүрүүдө')}</h2>
         <div style={{ fontSize: "18px", fontWeight: "bold" }}>
           {timeDisplay}
         </div>

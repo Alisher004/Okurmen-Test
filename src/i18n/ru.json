@@ -4,11 +4,14 @@
     "start": "Начать тест",
     "submit": "Отправить",
     "next": "Далее",
-    "back": "Назад"
+    "back": "Назад",
+    "login": "Войти",
+    "register": "Регистрация",
+    "logout": "Выход"
   },
   "pages": {
     "home": {"welcome": "Добро пожаловать"},
-    "auth": {"login": "Войти"},
+    "auth": {"login": "Войти", "register": "Регистрация"},
     "level": {"choose": "Выберите уровень"},
     "test": {"inProgress": "Тест выполняется"},
     "result": {"score": "Набранные баллы", "percent": "Процент"}

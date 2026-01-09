@@ -1,53 +1,37 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, Outlet, useNavigate } from 'react-router-dom';
-import { supabase, getCurrentSession, onAuthStateChange } from '../services/supabaseClient';
+import { Navigate, Outlet } from 'react-router-dom';
 
 const AdminProtectedRoute: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
-    let sub: { data: any } | undefined;
+    // Check if admin is logged in
+    const adminLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
+    setIsAdmin(adminLoggedIn);
+    setLoading(false);
+  }, []);
 
-    async function verify() {
-      setLoading(true);
-      try {
-        const session = await getCurrentSession();
-        const user = session?.user ?? null;
-        if (!user) {
-          setIsAdmin(false);
-          setLoading(false);
-          return;
-        }
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px',
+        color: '#6b7280',
+      }}>
+        Загрузка...
+      </div>
+    );
+  }
 
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+  if (!isAdmin) {
+    return <Navigate to="/admin/login" replace />;
+  }
 
-        if (error || !data) {
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(data.role === 'admin');
-        }
-      } catch (e) {
-        setIsAdmin(false);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    verify();
-
-    sub = onAuthStateChange(() => {
-      verify();
-    });
-
-    return () => {
-      if (sub && typeof sub.data?.unsubscribe === 'function') sub.data.unsubscribe();
-    };
+  return <Outlet />;
   }, [navigate]);
 
   if (loading) return <div>Loading...</div>;
@@ -55,6 +39,5 @@ const AdminProtectedRoute: React.FC = () => {
   if (!isAdmin) return <Navigate to="/auth" replace />;
 
   return <Outlet />;
-};
-
+}
 export default AdminProtectedRoute;

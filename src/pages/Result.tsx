@@ -11,7 +11,18 @@ function Result() {
     return (
       <div style={{ padding: "20px", textAlign: "center" }}>
         <p>{lang === "ru" ? "Результаты недоступны" : "Натыйжалар жок"}</p>
-        <button onClick={() => navigate("/")}>
+        <button 
+          onClick={() => navigate("/")}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontSize: "16px",
+          }}
+        >
           {lang === "ru" ? "Главная" : "Башкы бет"}
         </button>
       </div>
@@ -24,9 +35,9 @@ function Result() {
     if (percent < 40) {
       return lang === "ru" ? "Слабый" : "Алсыз";
     } else if (percent < 70) {
-      return lang === "ru" ? "Средний" : "Орто";
+      return lang === "ru" ? "Средний" : "Орточо";
     } else {
-      return lang === "ru" ? "Высокий" : "Жогору";
+      return lang === "ru" ? "Высокий" : "Жогорку";
     }
   };
 
@@ -56,17 +67,50 @@ function Result() {
 
       <ProgressBar percent={percent} />
 
-      <button
-        onClick={() => navigate("/")}
-        style={{
-          marginTop: "30px",
-          padding: "10px 20px",
-          fontSize: "16px",
-          cursor: "pointer",
-        }}
-      >
-        {lang === "ru" ? "Вернуться на главную" : "Башкы бетке кайтуу"}
-      </button>
+      <div style={{ marginTop: "30px", display: "flex", gap: "12px", justifyContent: "center" }}>
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            padding: "10px 20px",
+            fontSize: "16px",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            transition: "background-color 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "#2563eb";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "#3b82f6";
+          }}
+        >
+          {lang === "ru" ? "Вернуться на главную" : "Башкы бетке кайтуу"}
+        </button>
+        <button
+          onClick={() => navigate("/test")}
+          style={{
+            padding: "10px 20px",
+            fontSize: "16px",
+            backgroundColor: "#10b981",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            transition: "background-color 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "#059669";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "#10b981";
+          }}
+        >
+          {lang === "ru" ? "Пройти тест ещё раз" : "Тестти кайра өтүү"}
+        </button>
+      </div>
     </div>
   );
 }
